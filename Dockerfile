@@ -40,9 +40,6 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dumb-init to handle signals properly
-RUN apk add --no-cache dumb-init
-
 # Create necessary directories
 RUN mkdir -p /app/api /app/ui/dist /app/public
 
@@ -61,11 +58,8 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 	CMD node -e "require('http').get('http://localhost:3000', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})" || exit 1
 
-# Use dumb-init to properly handle signals
-ENTRYPOINT ["/sbin/dumb-init", "--"]
-
 # Set working directory to api for startup
 WORKDIR /app/api
 
-# Start the backend server
+# Start the backend server using node directly
 CMD ["node", "dist/main"]
