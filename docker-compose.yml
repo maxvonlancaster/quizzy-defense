@@ -1,0 +1,55 @@
+# Docker Compose for local testing
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: quizzy_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password_change_me
+      POSTGRES_DB: quizzi_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: quizzy_app
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      CORS_ORIGIN: http://localhost:3000
+      FRONTEND_URL: http://localhost:3000
+      DATABASE_URL: postgresql://postgres:postgres_password_change_me@postgres:5432/quizzi_db
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres_password_change_me
+      DB_DATABASE: quizzi_db
+      JWT_SECRET: your_jwt_secret_change_this_in_production
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_MODEL: openai/gpt-4o
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: http://localhost:3000/auth/google/callback
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      SENDGRID_SENDER: ${SENDGRID_SENDER}
+      EMAIL_RESET_PASSWORD_URL: http://localhost:3000/reset-password
+      EMAIL_RESET_TEMPLATE_ID: ${EMAIL_RESET_TEMPLATE_ID}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    links:
+      - postgres
+
+volumes:
+  postgres_data:
